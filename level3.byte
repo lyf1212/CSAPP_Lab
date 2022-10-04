@@ -1,0 +1,10 @@
+
+level3.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:	48 c7 c7 28 fd 65 55 	mov    $0x5565fd28,%rdi
+   7:	68 77 21 40 00       	pushq  $0x402177
+   c:	c3                   	retq   

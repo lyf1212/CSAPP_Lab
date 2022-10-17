@@ -1,0 +1,277 @@
+#######################################################################
+# Test for copying block of size 4;
+#######################################################################
+	.pos 0
+main:	irmovq Stack, %rsp  	# Set up stack pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovq $4, %rdx		# src and dst have 4 elements
+	irmovq dest, %rsi	# dst array
+	irmovq src, %rdi	# src array
+	call ncopy		 
+	halt			# should halt with num nonzeros in %rax
+StartFun:
+# Author:李一凡 ID=2100012520@stu.pku.edu.cn
+# 优化思路1：将原来的“先把常数移到寄存器中再做运算”的方法改成使用iaddq实现，减少冗余；(13.70)
+# 优化思路2：将Always Taken的分支预测方法改成BTFNT, 提高预测准确性。不过由于现在程序中分支并不多，所以这条方法没有很大改进；(13.63)
+# 优化点：Y86-64处理器默认寄存器存储的是0，所以一开始的那个异或是没必要的；(13.56)
+# 优化点：在mrmovq和rmmovq之间插入无关痛痒的%rdi+=8，因为后一个mov在前一个访存之后才能接收到数据转发，而这造成了一个阶段的暂停。把第一遍改漏的subq也换成iaddq；(11.56)
+# 优化点：每次对len减一的时候总是andq判断一下再跳转，实际上跳转之前只要没有其他运算就可以了；（10.56）
+# 优化思路3：按len-=2展开循环。一开始先把len-2，判断有没有资格进入设计出来的Loop_double。每次从Loop_double出来都要先-2，判断有没有再次进入Loop_double的资格。
+# 每次发现没有进入的资格就直接跳到Once 里面。由于%rdx比2小但是每次只是减去2，所以这个部分会判断%rdx是0(直接返回到Done)还是1(按照Once中的语句再ncopy一次)；(8.73)
+# 优化思路4：按len-=3展开循环。与思路3类似，只是在最后跳出的判断出有差异。我选择先把由于小于3而不能进入下一次Loop_trible的%rdx先加上2，这样原来的0是负的，1是equal，2是正的。然后跳转到各自的处理模块中即可；(8.12)
+# 优化思路5：按len-=4展开循环。与上述过程类似，在第一个mrmov的地方利用bubble多复制一个，之后滚雪球。最后判断余数的时候，先加上3，再看大于或小于。等于只用执行一次。如果执行3次，先把最后一个复制过去，剩下两个与复制两次的用同一片代码，便于之后展开规模更大时不超字节限制；(7.90)
+# 优化思路6：按len-=6展开循环。处理余数的时候没什么技巧，只是加了一些数然后分成-1,0和从1开始的正数。如果不能完全分开就减一些数，仍然把他们分成-1,0,,一些正数......
+# 目前ncopy.yo的字节数637, 最后处理余数的环节出现了不少bubble；(7.76)
+# 优化思路7：按len-=8展开，与之前相似，不再赘述。由于没有找到合适的方法处理最后余数部分的的bubble，对于前面数据规模较小的测试来说反而是负优化；(7.75)
+# 优化思路8：利用书后题4.57提到的加载转发，合理优化mrmov和rmmov连起来的余数处理的部分；(7.63)	(同样处理但是AT分支预测CPE=7.71)
+
+
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	# xorq %rax,%rax		# count = 0;
+
+	# 设法判断运行时环境:
+	andq %r12, %r12
+	je naive_ncopy
+
+	iaddq $-9, %rdx
+	jl Last
+
+	
+Loop_nine:	
+	mrmovq (%rdi), %r10	# read val from src...
+	mrmovq 8(%rdi), %r11	# Destory this bubble.
+	rmmovq %r10, (%rsi)	# ...and store it to dst
+	andq %r10, %r10		# val <= 0?
+	# jle L1		# if so, goto L1	(Across iaddq):
+	iaddq $1, %rax		# irmovq $1, %r10
+						# addq %r10, %rax		# count++
+L1:	
+	mrmovq 16(%rdi), %r10
+	rmmovq %r11, 8(%rsi)
+	andq %r11, %r11
+	# jle L2
+	iaddq $1, %rax
+
+L2:
+	mrmovq 24(%rdi), %r11
+	rmmovq %r10, 16(%rsi)
+	andq %r10, %r10
+	# jle L3
+	iaddq $1, %rax
+L3:
+	mrmovq 32(%rdi), %r10
+	rmmovq %r11, 24(%rsi)
+	andq %r11, %r11
+	# jle L4
+	iaddq $1, %rax
+L4:
+	mrmovq 40(%rdi), %r11
+	rmmovq %r10, 32(%rsi)
+	andq %r10, %r10
+	# jle L5
+	iaddq $1, %rax
+L5:
+	mrmovq 48(%rdi), %r10
+	rmmovq %r11, 40(%rsi)
+	andq %r11, %r11
+	# jle L6
+	iaddq $1, %rax
+L6:
+	mrmovq 56(%rdi), %r11
+	rmmovq %r10, 48(%rsi)
+	andq %r10, %r10
+	# jle L7
+	iaddq $1, %rax
+L7:
+	mrmovq 64(%rdi), %r10
+	rmmovq %r11, 56(%rsi)
+	andq %r11, %r11
+	# jle L8
+	iaddq $1, %rax
+L8:
+	rmmovq %r10, 64(%rsi)
+	andq %r10, %r10
+	# jle L9
+	iaddq $1, %rax
+
+L9:
+	iaddq $72, %rdi		# src += 9
+	iaddq $72, %rsi		# dst += 9
+	iaddq $-9, %rdx
+	jge Loop_nine		# if %rdx >= 9, goto Loop again:
+
+Last:
+	iaddq $8, %rdx
+	jl Done
+	jg Judge_remain		# 对应着原来的2,3,4,5,6,7,8.
+	mrmovq (%rdi), %r10
+	rmmovq %r10, (%rsi)
+	andq %r10, %r10
+	jle Done
+	iaddq $1, %rax
+	ret
+
+Judge_remain:
+	iaddq $-2, %rdx
+	jl Loop_twice
+	je Loop_three
+	jg Judge_four_to_eight
+
+Judge_four_to_eight:
+	iaddq $-2, %rdx
+	jl Loop_four
+	je Loop_five
+	jg Judge_six_eight
+
+Judge_six_eight:
+	iaddq $-2, %rdx
+	jl Loop_six
+	je Loop_seven
+
+Loop_eight:
+	mrmovq 56(%rdi), %r10
+	rmmovq %r10, 56(%rsi)
+	andq %r10, %r10
+	# jle Loop_seven
+	iaddq $1, %rax
+
+Loop_seven:
+	mrmovq 48(%rdi), %r10
+	rmmovq %r10, 48(%rsi)
+	andq %r10, %r10
+	# jle Loop_six
+	iaddq $1, %rax
+
+Loop_six:
+	mrmovq 40(%rdi), %r10
+	rmmovq %r10, 40(%rsi)
+	andq %r10, %r10
+	# jle Loop_five
+	iaddq $1, %rax
+
+Loop_five:
+	mrmovq 32(%rdi), %r10
+	rmmovq %r10, 32(%rsi)
+	andq %r10, %r10
+	# jle Loop_four
+	iaddq $1, %rax
+
+Loop_four:
+	mrmovq 24(%rdi), %r10
+	rmmovq %r10, 24(%rsi)
+	andq %r10, %r10
+	# jle Loop_three
+	iaddq $1, %rax
+
+Loop_three:
+	mrmovq 16(%rdi), %r10
+	rmmovq %r10, 16(%rsi)
+	andq %r10, %r10
+	# jle Loop_twice
+	iaddq $1, %rax
+	
+
+Loop_twice:
+	mrmovq (%rdi), %r10
+	mrmovq 8(%rdi), %r11	# Destory the bubble.
+	rmmovq %r10, (%rsi)
+	andq %r10, %r10
+	# jle Second
+	iaddq $1, %rax
+Second:
+	rmmovq %r11, 8(%rsi)
+	andq %r11, %r11
+	# jle Done
+	iaddq $1, %rax
+	ret
+
+naive_ncopy:
+	andq %rdx,%rdx		# len <= 0?
+	jle Done		# if so, goto Done:
+
+Loop:	
+	mrmovq (%rdi), %r10	# read val from src...
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)	# ...and store it to dst
+	andq %r10, %r10		# val <= 0?
+	jle Npos		# if so, goto Npos:
+	iaddq $1, %rax		# irmovq $1, %r10
+						# addq %r10, %rax		# count++
+Npos:	
+	iaddq $-1, %rdx		
+	iaddq $8, %rsi		# dst++
+	andq %rdx,%rdx		# len > 0?
+	jg Loop			# if so, goto Loop:
+
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function (AND MAKE SURE THERE IS A BLANKE LINE IN THE END!!!)
+End:
+#/* $end ncopy-ys */
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 8
+src:
+	.quad -1
+	.quad 2
+	.quad 3
+	.quad -4
+	.quad 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.quad 0xbcdefa
+dest:
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+Postdest:
+	.quad 0xdefabc
+
+.align 8
+# Run time stack
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+
+Stack:

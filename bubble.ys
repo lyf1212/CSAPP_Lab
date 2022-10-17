@@ -1,0 +1,70 @@
+# Author:李一凡 ID=2100012520@stu.pku.edu.cn
+    .pos 0
+    irmovq stack, %rsp
+    call main
+    halt
+
+# sample linked list
+.align 8
+Array:
+    .quad 0xbca
+    .quad 0xcba
+    .quad 0xacb
+    .quad 0xcab
+    .quad 0xabc
+    .quad 0xbac
+
+
+main:
+    irmovq Array, %rdi   
+    irmovq $6, %rsi
+    call bubble_sort
+    ret
+
+# 一定要记住 (long*) 加减1，地址加减8.
+bubble_sort:
+    pushq %rbx
+    rrmovq %rdi, %rcx   # 把第一个参数存到%rcx中，当作last.
+    irmovq $8, %r8
+    irmovq $1, %rdx
+    jmp add_test
+add_eight:    
+    subq %rdx, %rsi     # 发现之后没有用到%rsi(count)的地方了，索性直接减之.
+    addq %r8, %rcx
+add_test:
+    andq %rsi, %rsi
+    jne add_eight
+# 这样得到的%rcx = %rdi + 8 * %rsi.
+
+    jmp loop1_test
+loop1:
+    subq %r8, %rcx      # 先减去8，是因为之前初始化的时候的那个8没有减.
+    rrmovq %rdi, %r10
+    jmp loop2_test
+loop2:
+    mrmovq 8(%r10), %r12    # %r12:存放*(i+1)
+    mrmovq (%r10), %r11     # %r11:存放*(i)
+    rrmovq %r12, %r9
+    subq %r11, %r9
+    jge no_swap
+    rmmovq %r11, 8(%r10)
+    rmmovq %r12, (%r10)
+no_swap:
+    addq %r8, %r10
+loop2_test:
+    rrmovq %r10, %r9
+    subq %rcx, %r9
+    jl loop2
+
+loop1_test:
+    rrmovq %rcx, %r9
+    subq %rdi, %r9
+    jg loop1
+
+    popq %rbx
+    ret
+
+
+    .pos 0x200
+stack:
+ 

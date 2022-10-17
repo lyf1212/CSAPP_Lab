@@ -1,0 +1,43 @@
+# Author:李一凡 ID=2100012520@stu.pku.edu.cn
+    .pos 0
+    irmovq stack, %rsp
+    call main
+    halt
+
+# sample linked list
+.align 8
+ele1:
+    .quad 0x00a
+    .quad ele2
+ele2:
+    .quad 0x0b0
+    .quad ele3
+ele3:
+    .quad 0xc00
+    .quad 0
+
+main:
+    irmovq ele1, %rdi   # 把链表的头指针放进第一个参数.
+    call rsum_list
+    ret
+
+rsum_list:
+    pushq %rbx
+    xorq %rax, %rax
+    jmp test
+recurs:
+    mrmovq (%rdi), %rbx
+    mrmovq 8(%rdi), %rdi
+    call rsum_list
+    addq %rbx, %rax
+    popq %rbx       # ret 之前一定要把%rbx给pop出去.
+    ret
+test:
+    andq %rdi, %rdi
+    jne recurs
+    popq %rbx
+    ret
+
+
+    .pos 0x200
+stack:

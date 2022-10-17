@@ -1,0 +1,57 @@
+# Author:李一凡 ID=2100012520@stu.pku.edu.cn
+# 优化思路1：将原来的“先把常数移到寄存器中再做运算”的方法改成使用iaddq实现，减少冗余；(13.70)
+# 优化思路2：将Always Taken的分支预测方法改成BTFNT, 提高预测准确性。不过由于测试程序中分支并不多，所以这条方法没有很大改进；(13.63)
+# 优化点：Y86-64处理器默认寄存器存储的是0，所以一开始的那个异或是没必要的；(13.56)
+# 优化点：在mrmovq和rmmovq之间插入无关痛痒的%rdi+=8，因为后一个mov在前一个访存之后才能接收到数据转发，而这造成了一个阶段的暂停。把第一遍改漏的subq也换成iaddq；(11.56)
+# 
+
+
+
+
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	# xorq %rax,%rax		# count = 0;
+	andq %rdx,%rdx		# len <= 0?
+	jle Done		# if so, goto Done:
+
+Loop:	
+	mrmovq (%rdi), %r10	# read val from src...
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)	# ...and store it to dst
+	andq %r10, %r10		# val <= 0?
+	jle Npos		# if so, goto Npos:
+	iaddq $1, %rax		# irmovq $1, %r10
+						# addq %r10, %rax		# count++
+Npos:	
+	# irmovq $1, %r10
+	# subq %r10, %rdx		# len--
+	# irmovq $8, %r10
+	iaddq $-1, %rdx		
+	iaddq $8, %rsi		# dst++
+	andq %rdx,%rdx		# len > 0?
+	jg Loop			# if so, goto Loop:
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

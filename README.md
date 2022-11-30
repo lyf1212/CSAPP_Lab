@@ -27,3 +27,10 @@ Anyway, I have finished this LAB. I have to rethink Part B_64\*64 at some time.
 2022.11.13
 It is a really TOUGH lab! I was sometime want to quit. Thanks a lot, luck is on my side.
 I need to pay attetion to so many ways. But I find I get more familar to I/O and ECF.
+
+2022.11.30
+For the leak of time during fianl-term period, I can't pay all my attention to this tough and challenged lab.
+I try my best to debug and do some innovation on data struct and memory managment, and I can only got 89/100 score.
+Maybe I can try it again during the winter holiday, although I have terrible with so many SIGSEGV !!!
+
+

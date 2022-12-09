@@ -32,6 +32,7 @@ I need to pay attetion to so many ways. But I find I get more familar to I/O and
 For the leak of time during fianl-term period, I can't pay all my attention to this tough and challenged lab.
 I try my best to debug and do some innovation on data struct and memory managment, and I can only got 89/100 score.
 Maybe I can try it again during the winter holiday, although I have terrible with so many SIGSEGV !!!
+
 2022.12.9  
 I was motivated to try "footer-remove" method by a chat message of Bohai Li, my TA of ICS. I find a nice tutorial of MallocLab through JIANSHU.
 Actually, I finish my debug by a large amount of luck. Thanks a lot~

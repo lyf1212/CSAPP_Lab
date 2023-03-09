@@ -1,0 +1,17 @@
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+00 00 00 00 
+1e 20 40 00
+# When you want to run this code again, you 'd better delete this comment.
+# put the return address on the last line, so that "ret" to the func "touch1".
